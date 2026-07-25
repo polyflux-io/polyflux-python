@@ -1,0 +1,25 @@
+# Data — large local datasets, never uploaded (all_events.json is >500MB,
+# far over GitHub's 100MB file limit).
+data/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets / local config
+.env
+.env.*
+*.key
