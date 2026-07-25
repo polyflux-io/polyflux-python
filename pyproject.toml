@@ -3,7 +3,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "polyflux"
+# PyPI distribution name (what you `pip install`). The bare "polyflux" name is
+# already claimed on PyPI, so we ship as "polyflux-client" — the import name
+# stays `import polyflux` (see [tool.hatch.build] packages).
+name = "polyflux-client"
 version = "0.1.0"
 description = "Official Python client for Polyflux — stream real-time Polymarket trades from the mempool over WebSocket."
 readme = "README.md"

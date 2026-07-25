@@ -1,5 +1,9 @@
 # polyflux
 
+[![PyPI](https://img.shields.io/pypi/v/polyflux-client.svg)](https://pypi.org/project/polyflux-client/)
+[![Python](https://img.shields.io/pypi/pyversions/polyflux-client.svg)](https://pypi.org/project/polyflux-client/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 **Official Python client for [Polyflux](https://polyflux.io) — stream real-time Polymarket trades from the mempool over WebSocket.**
 
 See every Polymarket trade the millisecond it happens — ~3 seconds before it confirms on-chain. Build trading bots, whale alerts, and real-time signals in a few lines of Python.
@@ -9,8 +13,9 @@ See every Polymarket trade the millisecond it happens — ~3 seconds before it c
 ## Install
 
 ```bash
-pip install polyflux
+pip install polyflux-client
 ```
+Then `import polyflux` in your code.
 
 ## Quickstart
 
