@@ -61,8 +61,10 @@ logger = logging.getLogger(__name__)
 
 GAMMA_API = "https://gamma-api.polymarket.com"
 
-_DIR = os.path.dirname(os.path.abspath(__file__))
-_DEFAULT_RAW_FILE = os.path.join(_DIR, "data", "all_events.json")
+# The raw dump lives under ./data in the caller's working directory by default
+# (an installed package must never write into its own site-packages dir). Pass
+# raw_file=... to put it elsewhere.
+_DEFAULT_RAW_FILE = None
 _DEFAULT_REFRESH_INTERVAL = 3600  # full re-download cadence; 0/None disables
 
 Extractor = Callable[[dict, dict], Any]
@@ -170,7 +172,7 @@ class MarketCatalog:
         event_fields: list[str] | None = None,
         market_fields: list[str] | None = None,
         keep: Callable[[dict, dict], bool] | None = None,
-        raw_file: str = _DEFAULT_RAW_FILE,
+        raw_file: str | None = _DEFAULT_RAW_FILE,
         refresh_interval: int | None = _DEFAULT_REFRESH_INTERVAL,
         on_miss: str = "ignore",
         miss_ttl: int = 300,
@@ -183,7 +185,7 @@ class MarketCatalog:
         self._event_fields = list(event_fields) if event_fields else []
         self._market_fields = list(market_fields) if market_fields else []
         self._keep = keep
-        self._raw_file = raw_file
+        self._raw_file = raw_file or os.path.join(os.getcwd(), "data", "all_events.json")
         self._refresh_interval = refresh_interval or 0
         self._on_miss = on_miss
         self._miss_ttl = miss_ttl

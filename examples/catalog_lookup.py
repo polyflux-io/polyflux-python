@@ -15,7 +15,7 @@ refresh_interval controls freshness:
 import asyncio
 import json
 
-from market_catalog import MarketCatalog, extract_tag_slugs
+from polyflux import MarketCatalog, extract_tag_slugs
 
 # a token id exactly as it arrives with a trade from the chain
 SAMPLE_TOKEN = "98022490269692409998126496127597032490334070080325855126491859374983463996227"

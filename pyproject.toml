@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "polyflux"
+version = "0.1.0"
+description = "Official Python client for Polyflux — stream real-time Polymarket trades from the mempool over WebSocket."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Polyflux" }]
+keywords = [
+    "polymarket", "websocket", "real-time", "trading-bot",
+    "prediction-markets", "mempool", "market-data", "sdk",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business :: Financial",
+    "Framework :: AsyncIO",
+]
+dependencies = [
+    "websockets>=12.0",
+    "requests>=2.28",
+]
+
+[project.urls]
+Homepage = "https://polyflux.io"
+Documentation = "https://polyflux.io/blog"
+Repository = "https://github.com/polyflux/polyflux-python"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["polyflux"]
