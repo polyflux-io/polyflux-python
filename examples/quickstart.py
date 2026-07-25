@@ -1,6 +1,6 @@
 """Minimal example: stream live Polymarket trades.
 
-    pip install polyflux
+    pip install polyflux-client
     POLYFLUX_API_KEY=your_key python examples/quickstart.py
 """
 

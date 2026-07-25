@@ -3,7 +3,7 @@
 Combines the live stream (Client) with MarketCatalog to turn a trade's
 asset_id into a human-readable market question.
 
-    pip install polyflux
+    pip install polyflux-client
     POLYFLUX_API_KEY=your_key python examples/whale_alert.py
 
 The first run downloads the active-market catalog (~a few minutes) and caches
