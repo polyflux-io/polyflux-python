@@ -15,18 +15,20 @@ market it's on.
 """
 
 from .client import Client, DEFAULT_URL, PolyfluxError, AuthError
-from .models import Trade
+from .models import Trade, Transfer, Resolution
 from .catalog import (
     MarketCatalog,
     extract_tag_labels,
     extract_tag_slugs,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Client",
     "Trade",
+    "Transfer",
+    "Resolution",
     "MarketCatalog",
     "extract_tag_labels",
     "extract_tag_slugs",

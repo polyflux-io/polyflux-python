@@ -25,9 +25,13 @@ from typing import AsyncIterator
 
 import websockets
 
-from .models import Trade
+from .models import Trade, Transfer, Resolution
 
 logger = logging.getLogger(__name__)
+
+# event_type groupings used by the typed iterators
+_TRANSFER_TYPES = frozenset({"deposit", "p2p_transfer"})
+_RESOLUTION_TYPES = frozenset({"propose", "dispute", "settle"})
 
 DEFAULT_URL = "wss://stream.polyflux.io/polymarket"
 
@@ -161,6 +165,35 @@ class Client:
         async for event in self.events():
             if event.get("event_type") == "trade":
                 yield Trade.from_dict(event)
+
+    async def transfers(self) -> AsyncIterator[Transfer]:
+        """Yield stablecoin flows (deposits **and** p2p transfers) as typed
+        `Transfer` objects. Use `.is_deposit` / `.is_p2p` to distinguish, or the
+        `.deposits()` / `.p2p_transfers()` iterators for one kind only."""
+        async for event in self.events():
+            if event.get("event_type") in _TRANSFER_TYPES:
+                yield Transfer.from_dict(event)
+
+    async def deposits(self) -> AsyncIterator[Transfer]:
+        """Yield only external deposits into Polymarket wallets."""
+        async for event in self.events():
+            if event.get("event_type") == "deposit":
+                yield Transfer.from_dict(event)
+
+    async def p2p_transfers(self) -> AsyncIterator[Transfer]:
+        """Yield only wallet-to-wallet transfers between Polymarket wallets."""
+        async for event in self.events():
+            if event.get("event_type") == "p2p_transfer":
+                yield Transfer.from_dict(event)
+
+    async def resolutions(self) -> AsyncIterator[Resolution]:
+        """Yield UMA oracle resolution events (propose / dispute / settle) as
+        typed `Resolution` objects. Disputes are rare — most events are
+        proposals and settlements. Group by `.market_key` to track a market
+        across resets."""
+        async for event in self.events():
+            if event.get("event_type") in _RESOLUTION_TYPES:
+                yield Resolution.from_dict(event)
 
     def close(self) -> None:
         """Signal the iterators to stop after the current connection ends."""
