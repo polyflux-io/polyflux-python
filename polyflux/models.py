@@ -3,7 +3,9 @@
 The feed emits several event types, each with a ``event_type`` field:
 
 * ``trade``                      — a matched Polymarket trade  -> :class:`Trade`
-* ``deposit`` / ``p2p_transfer`` — stablecoin flows into/between PM wallets
+* ``money_flow``                 — corrected deposit/withdrawal x type
+                                   -> :class:`MoneyFlow`  (supersedes Transfer)
+* ``deposit`` / ``p2p_transfer`` — legacy stablecoin flows (deprecated)
                                    -> :class:`Transfer`
 * ``propose`` / ``dispute`` / ``settle`` — UMA oracle resolution lifecycle
                                    -> :class:`Resolution`
@@ -182,6 +184,89 @@ class Transfer:
         kind = "deposit" if self.is_deposit else "p2p"
         return (f"Transfer({kind} {self.amount} {self.token} "
                 f"{f}… -> {t}… [{self.tier}])")
+
+
+@dataclass(slots=True)
+class MoneyFlow:
+    """A corrected money-flow event: value entering (``deposit``) or leaving
+    (``withdrawal``) a Polymarket wallet, classified by where it went.
+
+    Supersedes :class:`Transfer` (``deposit``/``p2p_transfer``). It is tx-level, so
+    trade settlements are no longer mislabelled as p2p, and it adds withdrawals.
+    Each event is ``op`` x :attr:`type`:
+
+    * ``op``   — ``deposit`` (money in) / ``withdrawal`` (money out), from the
+                 perspective of :attr:`wallet_address`.
+    * ``type`` — ``external`` (crossed the Polymarket boundary — real money in/out
+                 that changes platform balances), ``p2p`` (to/from another PM wallet
+                 — internal redistribution, nets to zero platform-wide), or
+                 ``unidentified`` (counterparty we could not positively classify —
+                 may be an external transfer or an undetected peer).
+
+    A p2p transfer surfaces as two events: the sender's ``withdrawal``/``p2p`` and
+    the recipient's ``deposit``/``p2p``.
+    """
+
+    op: str | None            # "deposit" | "withdrawal"
+    type: str | None          # "external" | "p2p" | "unidentified"
+    wallet_address: str | None
+    counterparty: str | None
+    amount: float | None      # USD value moved
+    token: str | None         # "USDC" | "USDC.e" | "USDT" | "pUSD"
+    direction: str | None     # "in" | "out"
+    block_number: int | None
+    tx_hash: str | None
+    timestamp: Any = None     # ISO-8601 string on the wire
+    raw: dict = field(default_factory=dict, repr=False)
+
+    @property
+    def is_deposit(self) -> bool:
+        return self.op == "deposit"
+
+    @property
+    def is_withdrawal(self) -> bool:
+        return self.op == "withdrawal"
+
+    @property
+    def is_external(self) -> bool:
+        """Real money crossing the Polymarket boundary (changes platform balances)."""
+        return self.type == "external"
+
+    @property
+    def is_p2p(self) -> bool:
+        """Transfer to/from another PM wallet — nets to zero platform-wide."""
+        return self.type == "p2p"
+
+    @property
+    def is_unidentified(self) -> bool:
+        """Counterparty could not be classified (external, or an undetected peer)."""
+        return self.type == "unidentified"
+
+    @property
+    def time(self) -> datetime | None:
+        return _to_time(self.timestamp)
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "MoneyFlow":
+        return cls(
+            op=d.get("op"),
+            type=d.get("type") or d.get("flow_type"),
+            wallet_address=d.get("wallet_address") or d.get("walletAddress"),
+            counterparty=d.get("counterparty"),
+            amount=_to_float(d.get("amount")),
+            token=d.get("token"),
+            direction=d.get("direction"),
+            block_number=_to_int(d.get("block_number")),
+            tx_hash=d.get("tx_hash"),
+            timestamp=d.get("timestamp"),
+            raw=d,
+        )
+
+    def __repr__(self) -> str:
+        w = (self.wallet_address or "?")[:10]
+        cp = (self.counterparty or "-")[:10]
+        return (f"MoneyFlow({self.op}/{self.type} {self.amount} {self.token} "
+                f"wallet={w}… cp={cp}…)")
 
 
 @dataclass(slots=True)

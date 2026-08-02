@@ -25,7 +25,7 @@ from typing import AsyncIterator
 
 import websockets
 
-from .models import Trade, Transfer, Resolution
+from .models import Trade, Transfer, Resolution, MoneyFlow
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +179,29 @@ class Client:
         async for event in self.events():
             if event.get("event_type") == "deposit":
                 yield Transfer.from_dict(event)
+
+    async def money_flows(self) -> AsyncIterator[MoneyFlow]:
+        """Yield corrected money-flow events (deposits AND withdrawals) as typed
+        `MoneyFlow`. This is the accurate, tx-level feed that supersedes
+        `transfers()` / `deposits()` / `p2p_transfers()` (which stream the legacy
+        `deposit`/`p2p_transfer` events and are deprecated). Filter with
+        `.is_deposit` / `.is_withdrawal` and `.is_external` / `.is_p2p` /
+        `.is_unidentified`."""
+        async for event in self.events():
+            if event.get("event_type") == "money_flow":
+                yield MoneyFlow.from_dict(event)
+
+    async def deposits_v2(self) -> AsyncIterator[MoneyFlow]:
+        """Corrected deposits only (money entering a PM wallet), as `MoneyFlow`."""
+        async for mf in self.money_flows():
+            if mf.is_deposit:
+                yield mf
+
+    async def withdrawals(self) -> AsyncIterator[MoneyFlow]:
+        """Withdrawals only (money leaving a PM wallet), as `MoneyFlow`."""
+        async for mf in self.money_flows():
+            if mf.is_withdrawal:
+                yield mf
 
     async def p2p_transfers(self) -> AsyncIterator[Transfer]:
         """Yield only wallet-to-wallet transfers between Polymarket wallets."""

@@ -1,4 +1,4 @@
-from polyflux import Trade, Transfer, Resolution
+from polyflux import Trade, Transfer, Resolution, MoneyFlow
 
 
 def test_trade_from_dict_basic():
@@ -80,3 +80,29 @@ def test_resolution_market_key_falls_back_to_market_id():
                               "outcome": "NO"})
     assert r.is_settle
     assert r.market_key == "42"
+
+
+# --- MoneyFlow (deposit / withdrawal x type) ------------------------------
+
+def test_moneyflow_deposit_external():
+    m = MoneyFlow.from_dict({"event_type": "money_flow", "op": "deposit",
+        "flow_type": "external", "wallet_address": "0xabc", "counterparty": None,
+        "amount": "350.0", "token": "pUSD", "direction": "in",
+        "block_number": "91", "tx_hash": "0xdead"})
+    assert m.is_deposit and not m.is_withdrawal
+    assert m.is_external and not m.is_p2p and not m.is_unidentified
+    assert m.type == "external" and m.amount == 350.0 and m.direction == "in"
+    assert m.block_number == 91
+
+
+def test_moneyflow_p2p_and_type_alias():
+    # wire uses "flow_type"; a plain "type" is also tolerated
+    m = MoneyFlow.from_dict({"op": "withdrawal", "type": "p2p", "amount": "9.97",
+        "wallet_address": "0x1", "counterparty": "0x2", "token": "pUSD", "direction": "out"})
+    assert m.is_withdrawal and m.is_p2p
+    assert m.counterparty == "0x2" and m.type == "p2p"
+
+
+def test_moneyflow_missing_fields_safe():
+    m = MoneyFlow.from_dict({})
+    assert m.op is None and m.amount is None and m.time is None

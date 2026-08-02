@@ -65,12 +65,19 @@ The feed carries more than trades. Each event has an `event_type`; typed
 iterators give you just the ones you want:
 
 ```python
-# Stablecoin flows — registry-classified, so a "confirmed" flow is a real
-# Polymarket movement, not a guess. Deposits are money entering PM wallets;
-# p2p transfers are money moving between them.
-async for t in client.transfers():          # deposits + p2p together
-    print(t.event_type, t.amount, t.token, t.from_address, "->", t.to_address)
-# or client.deposits() / client.p2p_transfers() for one kind
+# Money flows — the corrected, tx-level feed. Each event is a deposit (money in)
+# or withdrawal (money out) of a Polymarket wallet, typed by where it went:
+#   external     — real money crossing the Polymarket boundary (changes balances)
+#   p2p          — to/from another PM wallet (surfaces as two events: the sender's
+#                  withdrawal and the recipient's deposit)
+#   unidentified — counterparty we could not positively classify
+async for f in client.money_flows():
+    print(f.op, f.type, f.amount, f.token, f.wallet_address, "cp:", f.counterparty)
+# or client.deposits_v2() / client.withdrawals() for one direction.
+#
+# The legacy client.transfers()/deposits()/p2p_transfers() -> Transfer are
+# DEPRECATED: they mislabel trade settlements as p2p and omit withdrawals.
+# Prefer money_flows().
 
 # UMA oracle resolutions — how every market ultimately settles.
 async for r in client.resolutions():        # propose / dispute / settle
@@ -78,7 +85,10 @@ async for r in client.resolutions():        # propose / dispute / settle
         print("DISPUTED:", r.title, "by", r.disputer)
 ```
 
-- **`Transfer`** — `event_type` (`deposit`/`p2p_transfer`), `from_address`,
+- **`MoneyFlow`** — the corrected flow: `op` (`deposit`/`withdrawal`) x `type`
+  (`external`/`p2p`/`unidentified`), `wallet_address`, `counterparty`, `amount`,
+  `token`, `direction`, plus `.is_deposit`/`.is_withdrawal`/`.is_external`/`.is_p2p`.
+- **`Transfer`** *(deprecated — use `MoneyFlow`)* — `event_type` (`deposit`/`p2p_transfer`), `from_address`,
   `to_address`, `amount` (USD), `token` (`USDC`/`USDC.e`/`USDT`/`pUSD`), `tier`,
   `pm_link_reason`, plus `.is_deposit` / `.is_p2p` / `.is_confirmed`.
 - **`Resolution`** — `event_type` (`propose`/`dispute`/`settle`), `proposer`,
